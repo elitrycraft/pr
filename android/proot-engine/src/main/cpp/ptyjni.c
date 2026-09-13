@@ -38,7 +38,7 @@ static int setup_slave(int ptm_fd) {
 static pid_t last_child_pid = -1;
 
 JNIEXPORT jint JNICALL
-Java_id_or_oo_pr_PtyNative_nativeForkPty(
+Java_id_or_oo_pr_engine_PtyNative_nativeForkPty(
     JNIEnv *env, jclass cls, jstring jCmd, jobjectArray jArgs, jobjectArray jEnvVars,
     jint rows, jint cols) {
 
@@ -127,12 +127,12 @@ Java_id_or_oo_pr_PtyNative_nativeForkPty(
 }
 
 JNIEXPORT jint JNICALL
-Java_id_or_oo_pr_PtyNative_nativeGetPid(JNIEnv *env, jclass cls) {
+Java_id_or_oo_pr_engine_PtyNative_nativeGetPid(JNIEnv *env, jclass cls) {
     return (jint) last_child_pid;
 }
 
 JNIEXPORT jint JNICALL
-Java_id_or_oo_pr_PtyNative_nativeRead(
+Java_id_or_oo_pr_engine_PtyNative_nativeRead(
     JNIEnv *env, jclass cls, jint fd, jbyteArray jBuf, jint offset, jint length) {
 
     jbyte *buf = (*env)->GetByteArrayElements(env, jBuf, NULL);
@@ -147,7 +147,7 @@ Java_id_or_oo_pr_PtyNative_nativeRead(
 }
 
 JNIEXPORT jint JNICALL
-Java_id_or_oo_pr_PtyNative_nativeWrite(
+Java_id_or_oo_pr_engine_PtyNative_nativeWrite(
     JNIEnv *env, jclass cls, jint fd, jbyteArray jBuf, jint offset, jint length) {
 
     jbyte *buf = (*env)->GetByteArrayElements(env, jBuf, NULL);
@@ -162,7 +162,7 @@ Java_id_or_oo_pr_PtyNative_nativeWrite(
 }
 
 JNIEXPORT jint JNICALL
-Java_id_or_oo_pr_PtyNative_nativeResize(
+Java_id_or_oo_pr_engine_PtyNative_nativeResize(
     JNIEnv *env, jclass cls, jint fd, jint rows, jint cols) {
 
     struct winsize ws;
@@ -173,7 +173,7 @@ Java_id_or_oo_pr_PtyNative_nativeResize(
 }
 
 JNIEXPORT jint JNICALL
-Java_id_or_oo_pr_PtyNative_nativeWaitPid(JNIEnv *env, jclass cls, jint pid) {
+Java_id_or_oo_pr_engine_PtyNative_nativeWaitPid(JNIEnv *env, jclass cls, jint pid) {
     int status;
     pid_t result = waitpid(pid, &status, WNOHANG);
     if (result < 0) return -1;
@@ -183,6 +183,6 @@ Java_id_or_oo_pr_PtyNative_nativeWaitPid(JNIEnv *env, jclass cls, jint pid) {
 }
 
 JNIEXPORT void JNICALL
-Java_id_or_oo_pr_PtyNative_nativeClose(JNIEnv *env, jclass cls, jint fd) {
+Java_id_or_oo_pr_engine_PtyNative_nativeClose(JNIEnv *env, jclass cls, jint fd) {
     close(fd);
 }

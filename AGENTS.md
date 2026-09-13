@@ -128,7 +128,7 @@ adb shell run-as id.or.oo.pr files/usr/bin/pr-cli test debian
 
 ### Known test failures (Alpine-specific)
 
-- **rust suite on Alpine**: 1/4 pass (rustc -vV works). rustc compile and cargo build fail with "linker `cc` not found" — `apk add gcc` installs gcc but the `cc` symlink is not found via PATH inside proot. Not a proot bug; Debian's gcc package creates `/usr/bin/cc` correctly.
+- **rust suite on Alpine**: Previously 1/4 pass — rustc compile and cargo build failed with "linker `cc` not found". **Root cause:** hardcoded package name in bind mounts (see `docs/pr-improvements.md` #1). The bind mount pointed at `/data/data/id.or.oo.pr` regardless of the actual app package, which broke `.l2s` symlink resolution. Fixed by deriving `app_dir` dynamically from `APP_PREFIX` in `shared.rs`.
 
 ## Code Conventions
 
@@ -165,6 +165,21 @@ Command::new("apk").args(["update"]).output()
 // CORRECT:
 Command::new("/bin/sh").args(["-c", "apk update 2>&1"]).output()
 ```
+
+### Proot caveats
+
+**`touch` silently fails inside proot:** BusyBox `touch` uses `utimensat` which proot intercepts incorrectly. `touch /path/to/file` returns exit code 0 but the file is never created on disk. Use `echo > /path/to/file` instead — shell redirection uses `open(O_CREAT|O_WRONLY|O_TRUNC)` which proot handles correctly. Audit any scripts using `touch` for sentinel/marker files.
+
+**Double shell wrapping via `pr-cli login`:** `pr-cli login <distro> -- <args>` internally prepends `/bin/sh -l -c "<args.join(' ')>"`. Never pass `/bin/sh -c` as trailing args — it causes double wrapping and broken quoting:
+```bash
+# WRONG — double-wrapped, quotes get stripped:
+pr-cli login alpine -- /bin/sh -c "apk update && apk add rust"
+
+# CORRECT — pass the raw command string directly:
+pr-cli login alpine -- "apk update && apk add rust"
+```
+
+**OCI container path vs legacy plugin path:** OCI installs (via `docker.io/library/alpine:latest`) land in `var/lib/pr/containers/<alias>/rootfs/`. Legacy plugin installs (via `easycli.sh`) land in `var/lib/pr/installed-rootfs/<distro>/`. Code checking for distro existence must use the correct path for the installation method.
 
 ### Commit style
 
@@ -210,3 +225,4 @@ Use the Superpowers workflow and skills (`subagent-driven-development`, `brainst
 - `docs/rust-toolchain-support.md` — vfork/CLONE_VM fix, link2symlink readlink fix
 - `docs/integration-tests.md` — Integration test suite (37/37 pass)
 - `docs/targetsdk35-compatibility.md` — targetSdk 35 compatibility (PROOT_LOADER mechanism)
+- `docs/pr-improvements.md` — Improvements backported from rs.oo.or.id fork

@@ -12,7 +12,7 @@
 	url = git@github.com:samba-team/samba.git
 [submodule "vendor/termlib"]
 	path = vendor/termlib
-	url = git@github.com:connectbot/termlib.git
+	url = https://github.com/oonid/termlib.git
 [submodule "vendor/bionic"]
 	path = vendor/bionic
 	url = https://android.googlesource.com/platform/bionic

@@ -21,10 +21,15 @@ class App : Application(), ProotHost {
         private const val BOOTSTRAP_VERSION = 8
     }
 
-    override fun getPrefixDir(): File = File(filesDir, "usr")
+    override val prefixDir: File get() = File(filesDir, "usr")
 
-    override fun getHomeDir(): File = File(filesDir, "home")
+    override val homeDir: File get() = File(filesDir, "home")
 
+    @get:JvmName("getProotPackageName")
+    override val packageName: String get() = super.getPackageName()
+    
+    @get:JvmName("getProotCacheDir")
+    override val cacheDir: File get() = super.getCacheDir()
 
 
 

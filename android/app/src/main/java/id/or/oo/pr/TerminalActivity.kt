@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.sp
 import org.connectbot.terminal.TerminalEmulator
 import org.connectbot.terminal.TerminalEmulatorFactory
 import org.connectbot.terminal.Terminal
+import id.or.oo.pr.engine.ProotLauncher
 import java.io.File
 import kotlin.concurrent.thread
 

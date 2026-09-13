@@ -199,9 +199,9 @@ cd src/pr-cli && cargo build --target aarch64-linux-android --release
 
 # 3. Copy to jniLibs (always verify with md5sum)
 cp -f src/pr-cli/target/aarch64-linux-android/release/pr-cli \
-      android/app/src/main/jniLibs/arm64-v8a/libpr-cli.so
+      android/proot-engine/src/main/jniLibs/arm64-v8a/libpr-cli.so
 md5sum src/pr-cli/target/aarch64-linux-android/release/pr-cli \
-       android/app/src/main/jniLibs/arm64-v8a/libpr-cli.so
+       android/proot-engine/src/main/jniLibs/arm64-v8a/libpr-cli.so
 
 # 4. Build & install APK
 cd android && ./gradlew assembleDebug

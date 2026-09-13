@@ -52,7 +52,8 @@ private data class OciImageSuggestion(
 )
 
 private val DISTRO_CATALOG = listOf(
-    DistroCatalogEntry("alpine", "alpine:3.20", "docker.io/library/alpine:3.20"),
+    DistroCatalogEntry("alpine", "alpine:latest", "docker.io/library/alpine:latest"),
+    DistroCatalogEntry("alpine-edge", "alpine:edge", "docker.io/library/alpine:edge"),
     DistroCatalogEntry("archlinux", "Arch Linux", "docker.io/library/archlinux:latest"),
     DistroCatalogEntry("debian", "debian:stable", "docker.io/library/debian:stable"),
     DistroCatalogEntry("debian-testing", "debian:testing", "docker.io/library/debian:testing"),
@@ -64,7 +65,8 @@ private val DISTRO_CATALOG = listOf(
 )
 
 private val OCI_IMAGE_SUGGESTIONS = listOf(
-    OciImageSuggestion("Alpine 3.20", "docker.io/library/alpine:3.20", "alpine"),
+    OciImageSuggestion("Alpine Latest", "docker.io/library/alpine:latest", "alpine"),
+    OciImageSuggestion("Alpine Edge", "docker.io/library/alpine:edge", "alpine-edge"),
     OciImageSuggestion("Ubuntu Latest", "docker.io/library/ubuntu:latest", "ubuntu"),
     OciImageSuggestion("Debian Stable", "docker.io/library/debian:stable", "debian"),
     OciImageSuggestion("Debian Testing", "docker.io/library/debian:testing", "debian-testing"),

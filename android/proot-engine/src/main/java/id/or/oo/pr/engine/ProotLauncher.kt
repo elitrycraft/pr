@@ -1,16 +1,16 @@
-package id.or.oo.pr
+package id.or.oo.pr.engine
 
 import android.util.Log
 import java.io.File
 
-class ProotLauncher(private val app: App) {
+class ProotLauncher(private val host: ProotHost) {
 
     companion object {
         private const val TAG = "PR"
     }
 
     val prefixDir: File
-        get() = app.prefixDir
+        get() = host.prefixDir
 
     fun startSession(
         distroName: String,
@@ -80,20 +80,20 @@ class ProotLauncher(private val app: App) {
 
     private fun buildEnvVars(): Array<String> {
         val binDir = File(prefixDir, "bin")
-        val homeDir = app.homeDir
+        val homeDir = host.homeDir
         val prefix = prefixDir.absolutePath
 
         return arrayOf(
             "APP_PREFIX", prefix,
             "APP_HOME", homeDir.absolutePath,
-            "APP_PACKAGE", app.packageName,
+            "APP_PACKAGE", host.packageName,
             "PATH", "${binDir.absolutePath}:/system/bin:/system/xbin",
             "HOME", homeDir.absolutePath,
             "PROOT_NO_SECCOMP", "1",
-            "PROOT_TMP_DIR", app.cacheDir.absolutePath,
+            "PROOT_TMP_DIR", host.cacheDir.absolutePath,
             "TERM", "xterm-256color",
             "LANG", "en_US.UTF-8",
-            "TMPDIR", app.cacheDir.absolutePath,
+            "TMPDIR", host.cacheDir.absolutePath,
         )
     }
 

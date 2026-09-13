@@ -56,10 +56,10 @@ cd src/proot-integration-test && cargo build --target aarch64-linux-android --re
 cd src/pr-cli && cargo build --target aarch64-linux-android --release
 
 # 4. Copy binaries to APK
-cp build/out/arm64/proot android/app/src/main/jniLibs/arm64-v8a/libproot.so
-cp build/out/arm64/loader android/app/src/main/jniLibs/arm64-v8a/libproot-loader.so
+cp build/out/arm64/proot android/proot-engine/src/main/jniLibs/arm64-v8a/libproot.so
+cp build/out/arm64/loader android/proot-engine/src/main/jniLibs/arm64-v8a/libproot-loader.so
 cp src/pr-cli/target/aarch64-linux-android/release/pr-cli \
-   android/app/src/main/jniLibs/arm64-v8a/libpr-cli.so
+   android/proot-engine/src/main/jniLibs/arm64-v8a/libpr-cli.so
 
 # 5. Build APK
 cd android && ./gradlew assembleDebug

@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.OnBackPressedCallback
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -45,6 +46,10 @@ class TerminalActivity : ComponentActivity() {
             defaultBackground = Color(0xFF1a1a2e),
             onKeyboardInput = { data ->
                 session?.write(data)
+            },
+            onResize = { dims ->
+                Log.d(TAG, "Terminal resized to ${dims.rows}x${dims.columns}")
+                session?.resize(dims.rows, dims.columns)
             }
         )
         emulator = em
@@ -89,7 +94,7 @@ class TerminalActivity : ComponentActivity() {
                 ) {
                     Terminal(
                         terminalEmulator = em,
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.fillMaxSize().systemBarsPadding(),
                         initialFontSize = 12.sp,
                         backgroundColor = Color(0xFF1a1a2e),
                         foregroundColor = Color.White,

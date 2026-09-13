@@ -128,7 +128,7 @@ adb shell run-as id.or.oo.pr files/usr/bin/pr-cli test debian
 
 ### Known test failures (Alpine-specific)
 
-- **rust suite on Alpine**: 1/4 pass (rustc -vV works). rustc compile and cargo build fail with "linker `cc` not found" — `apk add gcc` installs gcc but the `cc` symlink is not found via PATH inside proot. Not a proot bug; Debian's gcc package creates `/usr/bin/cc` correctly.
+- **rust suite on Alpine**: Previously 1/4 pass — rustc compile and cargo build failed with "linker `cc` not found". **Root cause:** hardcoded package name in bind mounts (see `docs/pr-improvements.md` #1). The bind mount pointed at `/data/data/id.or.oo.pr` regardless of the actual app package, which broke `.l2s` symlink resolution. Fixed by deriving `app_dir` dynamically from `APP_PREFIX` in `shared.rs`.
 
 ## Code Conventions
 
@@ -165,6 +165,22 @@ Command::new("apk").args(["update"]).output()
 // CORRECT:
 Command::new("/bin/sh").args(["-c", "apk update 2>&1"]).output()
 ```
+
+### Proot caveats
+
+**`touch` silently fails inside proot:** BusyBox `touch` uses `utimensat` which proot intercepts incorrectly. `touch /path/to/file` returns exit code 0 but the file is never created on disk. Use `echo > /path/to/file` instead — shell redirection uses `open(O_CREAT|O_WRONLY|O_TRUNC)` which proot handles correctly. See `docs/important-notes.md` § pr-cli Caveats.
+
+**Double shell wrapping via `pr-cli login`:** `pr-cli login <distro> -- <args>` internally prepends `/bin/sh -l -c "<args.join(' ')>"`. Never pass `/bin/sh -c` as trailing args — it causes double wrapping and broken quoting:
+```bash
+# WRONG — double-wrapped, quotes get stripped:
+pr-cli login alpine -- /bin/sh -c "apk update && apk add rust"
+
+# CORRECT — pass the raw command string directly:
+pr-cli login alpine -- "apk update && apk add rust"
+```
+See `docs/important-notes.md` § pr-cli Caveats.
+
+**OCI container path vs legacy plugin path:** OCI installs land in `var/lib/pr/containers/<alias>/rootfs/`. Legacy plugin installs land in `var/lib/pr/installed-rootfs/<distro>/`. See `docs/android-apk-architecture.md` § OCI Container Paths.
 
 ### Commit style
 
@@ -205,8 +221,8 @@ Use the Superpowers workflow and skills (`subagent-driven-development`, `brainst
 
 ## Key References
 
-- `docs/important-notes.md` — Critical constraints, seccomp handlers, read first
-- `docs/proot-improvement.md` — Our proot fork vs vendor/proot and vendor/termux-proot
+- `docs/important-notes.md` — Critical constraints, seccomp handlers, pr-cli caveats, read first
+- `docs/proot-improvement.md` — Our proot fork vs vendor/proot and vendor/termux-proot; §29 covers bind mount bug
 - `docs/rust-toolchain-support.md` — vfork/CLONE_VM fix, link2symlink readlink fix
 - `docs/integration-tests.md` — Integration test suite (37/37 pass)
 - `docs/targetsdk35-compatibility.md` — targetSdk 35 compatibility (PROOT_LOADER mechanism)

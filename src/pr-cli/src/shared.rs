@@ -176,13 +176,15 @@ pub fn build_proot_args(
             }
         }
 
-        let apps_dir = "/data/data/id.or.oo.pr/files/apps";
-        if Path::new(apps_dir).is_dir() {
-            args.push(format!("--bind={}", apps_dir));
+        let app_dir = Path::new(&prefix).parent().unwrap().parent().unwrap();
+        
+        let apps_dir = app_dir.join("files/apps");
+        if apps_dir.is_dir() {
+            args.push(format!("--bind={}", apps_dir.display()));
         }
 
-        args.push("--bind=/data/data/id.or.oo.pr/cache".to_string());
-        args.push("--bind=/data/data/id.or.oo.pr".to_string());
+        args.push(format!("--bind={}/cache", app_dir.display()));
+        args.push(format!("--bind={}", app_dir.display()));
 
         if can_list_dir("/storage") {
             args.push("--bind=/storage".to_string());

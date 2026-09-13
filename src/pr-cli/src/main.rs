@@ -46,6 +46,8 @@ enum Commands {
         no_link2symlink: bool,
         #[arg(long)]
         custom_bind: Vec<String>,
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        command: Vec<String>,
     },
     Remove {
         distro: String,
@@ -528,9 +530,10 @@ fn main() {
             isolated,
             no_link2symlink,
             custom_bind,
+            command,
         } => {
             if let Err(e) =
-                command_login(&distro, &user, isolated, no_link2symlink, &custom_bind, &[])
+                command_login(&distro, &user, isolated, no_link2symlink, &custom_bind, &command)
             {
                 eprintln!("Error: {}", e);
                 std::process::exit(1);

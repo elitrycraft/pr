@@ -12,7 +12,7 @@ Android app that runs Linux distributions via [proot](https://github.com/proot-m
 
 ## The `:proot-engine` Library
 
-The core execution environment has been decoupled into a standalone Android Library (`:proot-engine`). Consumer apps (like `rs.oo.or.id`) can now integrate a full Linux execution engine via Gradle composite builds without duplicating native binaries or Kotlin bridge code.
+The core execution environment has been decoupled into a standalone Android Library (`:proot-engine`). Consumer apps (like interactive coding environments, IDEs, or terminal apps) can now integrate a full Linux execution engine via Gradle composite builds without duplicating native binaries or Kotlin bridge code.
 
 ## Supported distributions
 

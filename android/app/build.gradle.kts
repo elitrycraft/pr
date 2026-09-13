@@ -19,10 +19,6 @@ android {
             abiFilters += listOf("arm64-v8a")
         }
 
-        externalNativeBuild {
-            cmake {}
-        }
-
         packaging {
             jniLibs {
                 useLegacyPackaging = true
@@ -39,12 +35,6 @@ android {
         }
     }
 
-    externalNativeBuild {
-        cmake {
-            path = file("src/main/cpp/CMakeLists.txt")
-            version = "3.22.1"
-        }
-    }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -75,6 +65,7 @@ dependencies {
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.material:material-icons-extended")
 
+    implementation(project(":proot-engine"))
     implementation(project(":termlib"))
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")

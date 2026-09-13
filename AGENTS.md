@@ -48,8 +48,8 @@ build/                      # Build artifacts (gitignored)
 ```bash
 scripts/build.sh --arch=arm64
 # Output: build/out/arm64/proot, build/out/arm64/loader
-# Copy to android/app/src/main/jniLibs/arm64-v8a/libproot.so
-# Copy to android/app/src/main/jniLibs/arm64-v8a/libproot-loader.so
+# Copy to android/proot-engine/src/main/jniLibs/arm64-v8a/libproot.so
+# Copy to android/proot-engine/src/main/jniLibs/arm64-v8a/libproot-loader.so
 ```
 
 ### 2. Build pr-cli (Rust, NDK cross-compilation)
@@ -58,7 +58,7 @@ scripts/build.sh --arch=arm64
 # MUST run from src/pr-cli/ (required for .cargo/config.toml resolution)
 cd src/pr-cli && cargo build --target aarch64-linux-android --release
 # Output: target/aarch64-linux-android/release/pr-cli (~900KB)
-# Copy to android/app/src/main/jniLibs/arm64-v8a/libpr-cli.so
+# Copy to android/proot-engine/src/main/jniLibs/arm64-v8a/libpr-cli.so
 ```
 
 ### 3. Build test binary (guest-side, cross-compiled)
@@ -93,9 +93,9 @@ cd src/proot-integration-test && cargo build --target aarch64-linux-android --re
 cd src/pr-cli && cargo build --target aarch64-linux-android --release
 # 3. Copy to jniLibs (ALWAYS verify with md5sum)
 cp -f src/pr-cli/target/aarch64-linux-android/release/pr-cli \
-      android/app/src/main/jniLibs/arm64-v8a/libpr-cli.so
+      android/proot-engine/src/main/jniLibs/arm64-v8a/libpr-cli.so
 md5sum src/pr-cli/target/aarch64-linux-android/release/pr-cli \
-       android/app/src/main/jniLibs/arm64-v8a/libpr-cli.so
+       android/proot-engine/src/main/jniLibs/arm64-v8a/libpr-cli.so
 # 4. Build APK
 cd android && rm -rf app/build && ./gradlew assembleDebug
 # 5. Install

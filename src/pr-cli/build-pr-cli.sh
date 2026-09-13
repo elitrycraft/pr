@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-JNI_DIR="$PROJECT_ROOT/android/app/src/main/jniLibs/arm64-v8a"
+JNI_DIR="$PROJECT_ROOT/android/proot-engine/src/main/jniLibs/arm64-v8a"
 
 echo "Building pr-cli for aarch64-linux-android..."
 cd "$SCRIPT_DIR"

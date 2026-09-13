@@ -38,6 +38,27 @@ class ProotLauncher(private val app: App) {
         return Session(masterFd)
     }
 
+    /**
+     * Start a PTY session with a pre-parsed argument list.
+     * Use this instead of [runCommand] when arguments contain spaces or quotes
+     * that would be mangled by naive string splitting.
+     */
+    fun startCustomSession(
+        args: List<String>,
+        rows: Int = 24,
+        cols: Int = 80,
+    ): Session? {
+        val envVars = buildEnvVars()
+        val masterFd = PtyNative.forkPty(args[0], args.toTypedArray(), envVars, rows, cols)
+        if (masterFd < 0) {
+            Log.e(TAG, "forkPty failed with fd=$masterFd for ${args.joinToString(" ")}")
+            return null
+        }
+
+        Log.i(TAG, "PTY custom session started: ${args.joinToString(" ")}, masterFd=$masterFd")
+        return Session(masterFd)
+    }
+
     fun runCommand(
         command: String,
         rows: Int = 24,

@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.OnBackPressedCallback
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -93,7 +94,7 @@ class TerminalActivity : ComponentActivity() {
                 ) {
                     Terminal(
                         terminalEmulator = em,
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.fillMaxSize().systemBarsPadding(),
                         initialFontSize = 12.sp,
                         backgroundColor = Color(0xFF1a1a2e),
                         foregroundColor = Color.White,

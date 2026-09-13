@@ -45,6 +45,10 @@ class TerminalActivity : ComponentActivity() {
             defaultBackground = Color(0xFF1a1a2e),
             onKeyboardInput = { data ->
                 session?.write(data)
+            },
+            onResize = { dims ->
+                Log.d(TAG, "Terminal resized to ${dims.rows}x${dims.columns}")
+                session?.resize(dims.rows, dims.columns)
             }
         )
         emulator = em

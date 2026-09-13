@@ -49,7 +49,10 @@ fn get_oci_container_rootfs_dir_for_prefix(prefix: &str, name: &str) -> String {
 }
 
 fn get_oci_container_manifest_path_for_prefix(prefix: &str, name: &str) -> String {
-    format!("{}/manifest.json", get_oci_container_dir_for_prefix(prefix, name))
+    format!(
+        "{}/manifest.json",
+        get_oci_container_dir_for_prefix(prefix, name)
+    )
 }
 
 pub fn get_oci_containers_dir() -> String {
@@ -177,7 +180,7 @@ pub fn build_proot_args(
         }
 
         let app_dir = Path::new(&prefix).parent().unwrap().parent().unwrap();
-        
+
         let apps_dir = app_dir.join("files/apps");
         if apps_dir.is_dir() {
             args.push(format!("--bind={}", apps_dir.display()));
@@ -275,10 +278,7 @@ pub fn build_proot_args(
 
     let kernel_release = std::env::var("PROOT_DISTRO_KERNEL_RELEASE")
         .unwrap_or_else(|_| DEFAULT_FAKE_KERNEL_RELEASE.to_string());
-    args.push(format!(
-        "--kernel-release={}",
-        kernel_release,
-    ));
+    args.push(format!("--kernel-release={}", kernel_release,));
 
     if !no_link2symlink {
         args.push("--link2symlink".to_string());
@@ -392,10 +392,8 @@ mod tests {
         let _guard = env_lock().lock().expect("lock env");
         let base = unique_temp_dir("pr-cli-shared-rootfs");
         let prefix = base.join("usr");
-        let legacy = prefix
-            .join("var/lib/pr/installed-rootfs/debian");
-        let oci_rootfs = prefix
-            .join("var/lib/pr/containers/debian/rootfs");
+        let legacy = prefix.join("var/lib/pr/installed-rootfs/debian");
+        let oci_rootfs = prefix.join("var/lib/pr/containers/debian/rootfs");
         fs::create_dir_all(&legacy).expect("create legacy rootfs");
         fs::create_dir_all(&oci_rootfs).expect("create oci rootfs");
 
@@ -420,8 +418,14 @@ mod tests {
             map.get("PROOT_TMP_DIR").map(String::as_str),
             Some("/tmp/custom-cache")
         );
-        assert_eq!(map.get("TMPDIR").map(String::as_str), Some("/tmp/custom-cache"));
-        assert_eq!(map.get("PROOT_L2S_DIR").map(String::as_str), Some("/tmp/custom-l2s"));
+        assert_eq!(
+            map.get("TMPDIR").map(String::as_str),
+            Some("/tmp/custom-cache")
+        );
+        assert_eq!(
+            map.get("PROOT_L2S_DIR").map(String::as_str),
+            Some("/tmp/custom-l2s")
+        );
 
         std::env::remove_var("TMPDIR");
         std::env::remove_var("PROOT_L2S_DIR");
@@ -490,7 +494,10 @@ mod tests {
             get_download_cache_dir(),
             format!("{}/var/lib/pr/dlcache", prefix_str)
         );
-        assert_eq!(get_default_path_env(), format!("{}:{}", DEFAULT_PATH_ENV_SUFFIX, prefix_str));
+        assert_eq!(
+            get_default_path_env(),
+            format!("{}:{}", DEFAULT_PATH_ENV_SUFFIX, prefix_str)
+        );
         assert_eq!(
             get_oci_containers_dir(),
             format!("{}/var/lib/pr/containers", prefix_str)
@@ -515,9 +522,18 @@ mod tests {
     #[test]
     fn native_binary_paths_are_based_on_native_lib_dir() {
         let native_lib_dir = get_native_lib_dir();
-        assert_eq!(get_native_busybox(), format!("{}/libbusybox.so", native_lib_dir));
-        assert_eq!(get_native_proot(), format!("{}/libproot.so", native_lib_dir));
-        assert_eq!(get_native_loader(), format!("{}/libproot-loader.so", native_lib_dir));
+        assert_eq!(
+            get_native_busybox(),
+            format!("{}/libbusybox.so", native_lib_dir)
+        );
+        assert_eq!(
+            get_native_proot(),
+            format!("{}/libproot.so", native_lib_dir)
+        );
+        assert_eq!(
+            get_native_loader(),
+            format!("{}/libproot-loader.so", native_lib_dir)
+        );
     }
 
     #[test]
@@ -525,8 +541,7 @@ mod tests {
         let _guard = env_lock().lock().expect("lock env");
         let base = unique_temp_dir("pr-cli-shared-rootfs-oci");
         let prefix = base.join("usr");
-        let oci_rootfs = prefix
-            .join("var/lib/pr/containers/debian/rootfs");
+        let oci_rootfs = prefix.join("var/lib/pr/containers/debian/rootfs");
         fs::create_dir_all(&oci_rootfs).expect("create oci rootfs");
 
         std::env::set_var("APP_PREFIX", prefix.to_string_lossy().to_string());
@@ -568,11 +583,19 @@ mod tests {
             .expect("chmod restricted dir");
 
         assert!(can_read_dir(dir.to_str().expect("dir path")));
-        assert!(!can_read_dir(restricted_dir.to_str().expect("restricted dir path")));
+        assert!(!can_read_dir(
+            restricted_dir.to_str().expect("restricted dir path")
+        ));
         assert!(can_list_dir(dir.to_str().expect("dir path")));
         assert!(can_read_file(file.to_str().expect("file path")));
-        assert!(!can_list_dir(base.join("missing").to_str().expect("missing path")));
-        assert!(!can_read_file(base.join("missing.txt").to_str().expect("missing file path")));
+        assert!(!can_list_dir(
+            base.join("missing").to_str().expect("missing path")
+        ));
+        assert!(!can_read_file(
+            base.join("missing.txt")
+                .to_str()
+                .expect("missing file path")
+        ));
 
         let _ = fs::remove_dir_all(base);
     }
@@ -597,7 +620,10 @@ mod tests {
         assert!(args.contains(&String::from("--bind=/sys")));
         assert!(args.contains(&String::from("--bind=/proc/self/fd:/dev/fd")));
         assert!(args.contains(&String::from("--bind=/dev/urandom:/dev/random")));
-        assert!(args.contains(&format!("--bind={}:/tmp", base.join("cache").to_string_lossy())));
+        assert!(args.contains(&format!(
+            "--bind={}:/tmp",
+            base.join("cache").to_string_lossy()
+        )));
         assert!(!args.contains(&String::from("--link2symlink")));
 
         std::env::remove_var("APP_PREFIX");

@@ -1,15 +1,14 @@
+use sha2::Digest;
 use std::collections::BTreeMap;
 use std::fs;
 use std::io::{Read, Seek};
 use std::path::{Component, Path, PathBuf};
-use sha2::Digest;
 
 pub const OCI_IMAGE_INDEX_MEDIA_TYPE: &str = "application/vnd.oci.image.index.v1+json";
 pub const OCI_IMAGE_MANIFEST_MEDIA_TYPE: &str = "application/vnd.oci.image.manifest.v1+json";
 pub const DOCKER_MANIFEST_LIST_MEDIA_TYPE: &str =
     "application/vnd.docker.distribution.manifest.list.v2+json";
-pub const DOCKER_MANIFEST_MEDIA_TYPE: &str =
-    "application/vnd.docker.distribution.manifest.v2+json";
+pub const DOCKER_MANIFEST_MEDIA_TYPE: &str = "application/vnd.docker.distribution.manifest.v2+json";
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NormalizedArchitecture {
@@ -46,7 +45,10 @@ impl OciPlatform {
     pub fn normalized_architecture(&self) -> Option<NormalizedArchitecture> {
         let mut normalized = normalize_architecture(&self.architecture)?;
         if normalized.variant.is_none() {
-            normalized.variant = self.variant.as_ref().map(|variant| normalize_variant(variant));
+            normalized.variant = self
+                .variant
+                .as_ref()
+                .map(|variant| normalize_variant(variant));
         }
         Some(normalized)
     }
@@ -211,7 +213,10 @@ pub fn select_manifest_descriptor<'a>(
             continue;
         };
 
-        if best.as_ref().is_none_or(|(best_score, _)| score > *best_score) {
+        if best
+            .as_ref()
+            .is_none_or(|(best_score, _)| score > *best_score)
+        {
             best = Some((score, descriptor));
         }
     }
@@ -380,8 +385,7 @@ pub fn apply_layer_blob(blob_path: &Path, rootfs: &Path) -> Result<(), String> {
 fn apply_layer_tar_stream(reader: Box<dyn Read>, rootfs: &Path) -> Result<(), String> {
     use std::collections::HashSet;
 
-    fs::create_dir_all(rootfs)
-        .map_err(|e| format!("create rootfs {}: {}", rootfs.display(), e))?;
+    fs::create_dir_all(rootfs).map_err(|e| format!("create rootfs {}: {}", rootfs.display(), e))?;
     let mut archive = tar::Archive::new(reader);
     archive.set_preserve_permissions(true);
     archive.set_preserve_mtime(true);
@@ -409,7 +413,9 @@ fn apply_layer_tar_stream(reader: Box<dyn Read>, rootfs: &Path) -> Result<(), St
             let link_name = entry
                 .link_name()
                 .map_err(|e| format!("read hardlink target {}: {}", relative_path.display(), e))?
-                .ok_or_else(|| format!("hardlink {} missing link target", relative_path.display()))?;
+                .ok_or_else(|| {
+                    format!("hardlink {} missing link target", relative_path.display())
+                })?;
             let link_target = sanitize_layer_path(&link_name)?;
             if link_target.as_os_str().is_empty() {
                 return Err(format!(
@@ -610,7 +616,9 @@ fn remove_path_if_exists_with_protection(
         return Ok(());
     }
 
-    let has_protected_descendants = protected_paths.iter().any(|protected| protected.starts_with(path));
+    let has_protected_descendants = protected_paths
+        .iter()
+        .any(|protected| protected.starts_with(path));
     if !has_protected_descendants {
         return remove_path_if_exists(path);
     }
@@ -780,12 +788,14 @@ mod tests {
     #[test]
     fn prefers_exact_variant_match_when_available() {
         let manifests = vec![
-            OciDescriptor::new("sha256:aaa").with_platform(OciPlatform::new("linux", "arm").with_variant("v6")),
-            OciDescriptor::new("sha256:bbb").with_platform(OciPlatform::new("linux", "arm").with_variant("v7")),
+            OciDescriptor::new("sha256:aaa")
+                .with_platform(OciPlatform::new("linux", "arm").with_variant("v6")),
+            OciDescriptor::new("sha256:bbb")
+                .with_platform(OciPlatform::new("linux", "arm").with_variant("v7")),
         ];
 
-        let selected = select_manifest_descriptor(&manifests, "arm/v7")
-            .expect("expected matching descriptor");
+        let selected =
+            select_manifest_descriptor(&manifests, "arm/v7").expect("expected matching descriptor");
         assert_eq!(selected.digest, "sha256:bbb");
     }
 
@@ -805,8 +815,8 @@ mod tests {
             OciDescriptor::new("sha256:bbb").with_platform(OciPlatform::new("linux", "amd64")),
         ];
 
-        let selected = select_manifest_descriptor(&manifests, "x86_64")
-            .expect("expected linux descriptor");
+        let selected =
+            select_manifest_descriptor(&manifests, "x86_64").expect("expected linux descriptor");
         assert_eq!(selected.digest, "sha256:bbb");
     }
 
@@ -911,7 +921,10 @@ mod tests {
         let layer = tmp.join("layer.tar");
         write_layer_tar(
             &layer,
-            &[("etc/.wh.obsolete.conf", None), ("etc/new.conf", Some(b"new"))],
+            &[
+                ("etc/.wh.obsolete.conf", None),
+                ("etc/new.conf", Some(b"new")),
+            ],
         );
         apply_layer_blob(&layer, &rootfs).expect("apply layer");
 
@@ -1111,7 +1124,11 @@ mod tests {
         let path = blob_path(cache, "sha256:abc123").expect("blob path");
         assert_eq!(path, Path::new("/tmp/blobs/sha256_abc123"));
         assert_eq!(
-            blob_url("https://registry-1.docker.io/", "library/debian", "sha256:deadbeef"),
+            blob_url(
+                "https://registry-1.docker.io/",
+                "library/debian",
+                "sha256:deadbeef"
+            ),
             "https://registry-1.docker.io/v2/library/debian/blobs/sha256:deadbeef"
         );
     }

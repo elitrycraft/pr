@@ -304,7 +304,11 @@ fn run_suite(suite: &Suite, reporter: &mut TapReporter) {
             Err(e) => reporter.not_ok(num, test.name, &e),
         }
     }
-    eprintln!("[* Suite {} done in {:.1}s]", suite.name, start.elapsed().as_secs_f64());
+    eprintln!(
+        "[* Suite {} done in {:.1}s]",
+        suite.name,
+        start.elapsed().as_secs_f64()
+    );
 }
 
 fn now() -> String {
@@ -312,7 +316,12 @@ fn now() -> String {
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default();
     let secs = d.as_secs() % 86400;
-    format!("{:02}:{:02}:{:02}", secs / 3600, (secs % 3600) / 60, secs % 60)
+    format!(
+        "{:02}:{:02}:{:02}",
+        secs / 3600,
+        (secs % 3600) / 60,
+        secs % 60
+    )
 }
 
 fn main() {
@@ -347,7 +356,9 @@ fn main() {
     eprintln!("");
     eprintln!(
         "{} passed, {} failed, {} skipped in {:.1}s",
-        reporter.passed, reporter.failed, reporter.skipped,
+        reporter.passed,
+        reporter.failed,
+        reporter.skipped,
         total_start.elapsed().as_secs_f64()
     );
 

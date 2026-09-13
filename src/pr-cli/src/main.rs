@@ -270,10 +270,7 @@ fn command_list(verbose: bool) {
                     .unwrap_or_else(|| entry.alias.clone());
                 println!();
                 println!("  {}* {}{}{}", CYAN, YELLOW, display_name, RESET);
-                println!(
-                    "    {}Alias: {}{}{}",
-                    CYAN, GREEN, entry.alias, RESET
-                );
+                println!("    {}Alias: {}{}{}", CYAN, GREEN, entry.alias, RESET);
                 if let Some(install_name) = entry.install_name.as_deref() {
                     if install_name != entry.alias {
                         println!(
@@ -438,8 +435,11 @@ mod tests {
         let legacy = base.join("installed-rootfs");
         let containers = base.join("containers");
         fs::create_dir_all(containers.join("debian").join("rootfs")).expect("create oci rootfs");
-        fs::write(containers.join("debian").join("manifest.json"), "{invalid-json")
-            .expect("write invalid metadata");
+        fs::write(
+            containers.join("debian").join("manifest.json"),
+            "{invalid-json",
+        )
+        .expect("write invalid metadata");
 
         let entries = collect_installed_entries_with_dirs(&legacy, &containers);
         assert_eq!(entries.len(), 1);
@@ -532,9 +532,14 @@ fn main() {
             custom_bind,
             command,
         } => {
-            if let Err(e) =
-                command_login(&distro, &user, isolated, no_link2symlink, &custom_bind, &command)
-            {
+            if let Err(e) = command_login(
+                &distro,
+                &user,
+                isolated,
+                no_link2symlink,
+                &custom_bind,
+                &command,
+            ) {
                 eprintln!("Error: {}", e);
                 std::process::exit(1);
             }

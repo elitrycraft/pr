@@ -50,7 +50,9 @@ fn force_remove_dir_all(path: &Path) {
     // rmdir failed — directory is non-empty or we can't stat it.
     // chmod 0700 so we can list and enter it.
     if let Ok(cstr) = CString::new(path.to_string_lossy().as_bytes()) {
-        unsafe { libc::chmod(cstr.as_ptr(), 0o700); }
+        unsafe {
+            libc::chmod(cstr.as_ptr(), 0o700);
+        }
     }
 
     if let Ok(entries) = fs::read_dir(path) {
@@ -60,7 +62,9 @@ fn force_remove_dir_all(path: &Path) {
                 Ok(m) if m.is_dir() => force_remove_dir_all(&p),
                 _ => {
                     if let Ok(cstr) = CString::new(p.to_string_lossy().as_bytes()) {
-                        unsafe { libc::unlink(cstr.as_ptr()); }
+                        unsafe {
+                            libc::unlink(cstr.as_ptr());
+                        }
                     }
                 }
             }
@@ -69,7 +73,9 @@ fn force_remove_dir_all(path: &Path) {
 
     // rmdir after children are cleared
     if let Ok(cstr) = CString::new(path.to_string_lossy().as_bytes()) {
-        unsafe { libc::rmdir(cstr.as_ptr()); }
+        unsafe {
+            libc::rmdir(cstr.as_ptr());
+        }
     }
 }
 
@@ -295,13 +301,14 @@ pub fn command_backup(distro_name: &str, output_path: Option<&str>) -> Result<()
 
     let busybox = get_native_busybox();
     let status = if source_type == InstalledSourceType::Legacy {
-        let plugin_file = if Path::new(&format!("{}/{}.override.sh", plugins_dir, distro_name)).exists() {
-            Some(format!("{}.override.sh", distro_name))
-        } else if Path::new(&format!("{}/{}.sh", plugins_dir, distro_name)).exists() {
-            Some(format!("{}.sh", distro_name))
-        } else {
-            None
-        };
+        let plugin_file =
+            if Path::new(&format!("{}/{}.override.sh", plugins_dir, distro_name)).exists() {
+                Some(format!("{}.override.sh", distro_name))
+            } else if Path::new(&format!("{}/{}.sh", plugins_dir, distro_name)).exists() {
+                Some(format!("{}.sh", distro_name))
+            } else {
+                None
+            };
         msg_status("Archiving the rootfs and plug-in...");
         let parent_rootfs = Path::new(&installed_rootfs_dir)
             .parent()
@@ -408,9 +415,7 @@ pub fn command_restore(tarball_path: &str) -> Result<(), String> {
         return Err("unable to inspect tarball".to_string());
     }
     let listing = String::from_utf8_lossy(&list_output.stdout);
-    let contains_oci = listing
-        .lines()
-        .any(|line| line.starts_with("containers/"));
+    let contains_oci = listing.lines().any(|line| line.starts_with("containers/"));
 
     if contains_oci {
         fs::create_dir_all(&oci_containers_dir)
@@ -845,8 +850,16 @@ mod tests {
 
         chmod_recursive(&tmp_dir);
 
-        let root_mode = fs::metadata(&tmp_dir).expect("root meta").permissions().mode() & 0o777;
-        let nested_mode = fs::metadata(&nested).expect("nested meta").permissions().mode() & 0o777;
+        let root_mode = fs::metadata(&tmp_dir)
+            .expect("root meta")
+            .permissions()
+            .mode()
+            & 0o777;
+        let nested_mode = fs::metadata(&nested)
+            .expect("nested meta")
+            .permissions()
+            .mode()
+            & 0o777;
         let file_mode = fs::metadata(&file).expect("file meta").permissions().mode() & 0o777;
         assert_eq!(root_mode, 0o755);
         assert_eq!(nested_mode, 0o755);
@@ -868,8 +881,16 @@ mod tests {
 
         chmod_readable_recursive(&tmp_dir);
 
-        let root_mode = fs::metadata(&tmp_dir).expect("root meta").permissions().mode() & 0o777;
-        let nested_mode = fs::metadata(&nested).expect("nested meta").permissions().mode() & 0o777;
+        let root_mode = fs::metadata(&tmp_dir)
+            .expect("root meta")
+            .permissions()
+            .mode()
+            & 0o777;
+        let nested_mode = fs::metadata(&nested)
+            .expect("nested meta")
+            .permissions()
+            .mode()
+            & 0o777;
         let file_mode = fs::metadata(&file).expect("file meta").permissions().mode() & 0o777;
         assert_eq!(root_mode, 0o755);
         assert_eq!(nested_mode, 0o755);

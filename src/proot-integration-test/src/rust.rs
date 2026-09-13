@@ -16,7 +16,11 @@ fn run_sh_timed(label: &str, cmd: &str) -> Result<std::process::Output, String> 
     let output = match child.wait_with_output() {
         Ok(o) => o,
         Err(e) => {
-            return Err(format!("wait: {} after {:.1}s", e, start.elapsed().as_secs_f64()));
+            return Err(format!(
+                "wait: {} after {:.1}s",
+                e,
+                start.elapsed().as_secs_f64()
+            ));
         }
     };
     let elapsed = start.elapsed().as_secs_f64();
@@ -39,7 +43,8 @@ fn run_sh_timed(label: &str, cmd: &str) -> Result<std::process::Output, String> 
 }
 
 pub fn probe() -> bool {
-    std::path::Path::new("/usr/bin/rustc").exists() || std::path::Path::new("/usr/local/bin/rustc").exists()
+    std::path::Path::new("/usr/bin/rustc").exists()
+        || std::path::Path::new("/usr/local/bin/rustc").exists()
 }
 
 pub fn test_rustc_version() -> TestResult {
@@ -60,7 +65,10 @@ pub fn test_rustc_compile() -> TestResult {
     let src = "fn main(){println!(\"rs-ok\");}";
     std::fs::write("/tmp/pit-test.rs", src).map_err(|e| format!("write: {}", e))?;
 
-    let out = run_sh_timed("rustc compile", "rustc /tmp/pit-test.rs -o /tmp/pit-test-rs 2>&1")?;
+    let out = run_sh_timed(
+        "rustc compile",
+        "rustc /tmp/pit-test.rs -o /tmp/pit-test-rs 2>&1",
+    )?;
     if !out.status.success() {
         let _ = std::fs::remove_file("/tmp/pit-test.rs");
         return Err(format!(
@@ -83,7 +91,10 @@ pub fn test_rustc_compile() -> TestResult {
 pub fn test_cargo_no_vcs() -> TestResult {
     let _ = std::fs::remove_dir_all("/tmp/pit-cargo-novcs");
 
-    let out = run_sh_timed("cargo new", "cargo new --vcs none /tmp/pit-cargo-novcs 2>&1")?;
+    let out = run_sh_timed(
+        "cargo new",
+        "cargo new --vcs none /tmp/pit-cargo-novcs 2>&1",
+    )?;
     if !out.status.success() {
         let _ = std::fs::remove_dir_all("/tmp/pit-cargo-novcs");
         return Err(format!(
@@ -112,7 +123,10 @@ pub fn test_cargo_with_vcs() -> TestResult {
         return Err("stale .git/config.lock exists after remove_dir_all".to_string());
     }
 
-    let cfg = run_sh_timed("mkdir git config", "mkdir -p /root/.config/git && touch /root/.config/git/config 2>&1")?;
+    let cfg = run_sh_timed(
+        "mkdir git config",
+        "mkdir -p /root/.config/git && touch /root/.config/git/config 2>&1",
+    )?;
     if !cfg.status.success() {
         return Err(format!(
             "mkdir git config: {:?}",
@@ -129,7 +143,10 @@ pub fn test_cargo_with_vcs() -> TestResult {
         ));
     }
 
-    let out2 = run_sh_timed("cargo build (vcs)", "cd /tmp/pit-cargo-vcs && cargo build 2>&1")?;
+    let out2 = run_sh_timed(
+        "cargo build (vcs)",
+        "cd /tmp/pit-cargo-vcs && cargo build 2>&1",
+    )?;
     let build_ok = out2.status.success();
     let _ = std::fs::remove_dir_all("/tmp/pit-cargo-vcs");
     if build_ok {

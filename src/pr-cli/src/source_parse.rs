@@ -45,7 +45,9 @@ impl InstallSourceInput {
 
     pub fn kind(&self) -> InstallSourceInputKind {
         match self {
-            InstallSourceInput::OciImageReference { .. } => InstallSourceInputKind::OciImageReference,
+            InstallSourceInput::OciImageReference { .. } => {
+                InstallSourceInputKind::OciImageReference
+            }
             InstallSourceInput::DirectUrl { .. } => InstallSourceInputKind::DirectUrl,
             InstallSourceInput::LocalArchive { .. } => InstallSourceInputKind::LocalArchive,
         }
@@ -53,7 +55,9 @@ impl InstallSourceInput {
 
     pub fn source_text(&self) -> Cow<'_, str> {
         match self {
-            InstallSourceInput::OciImageReference { reference } => Cow::Borrowed(reference.as_str()),
+            InstallSourceInput::OciImageReference { reference } => {
+                Cow::Borrowed(reference.as_str())
+            }
             InstallSourceInput::DirectUrl { url } => Cow::Borrowed(url.as_str()),
             InstallSourceInput::LocalArchive { path } => Cow::Owned(path.display().to_string()),
         }
@@ -68,15 +72,7 @@ impl InstallSourceInput {
 }
 
 const LOCAL_ARCHIVE_SUFFIXES: &[&str] = &[
-    ".tar",
-    ".tar.gz",
-    ".tgz",
-    ".tar.xz",
-    ".txz",
-    ".tar.bz2",
-    ".tbz2",
-    ".tar.zst",
-    ".tzst",
+    ".tar", ".tar.gz", ".tgz", ".tar.xz", ".txz", ".tar.bz2", ".tbz2", ".tar.zst", ".tzst",
 ];
 
 fn looks_like_url(input: &str) -> bool {
@@ -91,7 +87,10 @@ fn looks_like_local_archive_path(input: &str) -> bool {
 }
 
 fn looks_like_local_archive_reference(input: &str) -> bool {
-    if input.starts_with('/') || input.starts_with("./") || input.starts_with("../") || input.starts_with("~/")
+    if input.starts_with('/')
+        || input.starts_with("./")
+        || input.starts_with("../")
+        || input.starts_with("~/")
     {
         return true;
     }
@@ -205,10 +204,9 @@ fn looks_like_oci_digest(input: &str) -> bool {
 
     !algorithm.is_empty()
         && !hex.is_empty()
-        && algorithm
-            .chars()
-            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || matches!(c, '.' | '_' | '+'
-                | '-'))
+        && algorithm.chars().all(|c| {
+            c.is_ascii_lowercase() || c.is_ascii_digit() || matches!(c, '.' | '_' | '+' | '-')
+        })
         && hex.chars().all(|c| c.is_ascii_hexdigit())
 }
 
@@ -231,9 +229,9 @@ fn is_valid_image_component(component: &str, allow_port: bool) -> bool {
         if let Some((host, port)) = component.split_once(':') {
             return !host.is_empty()
                 && !port.is_empty()
-                && host
-                    .chars()
-                    .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || matches!(c, '.' | '-'))
+                && host.chars().all(|c| {
+                    c.is_ascii_lowercase() || c.is_ascii_digit() || matches!(c, '.' | '-')
+                })
                 && port.chars().all(|c| c.is_ascii_digit());
         }
     }

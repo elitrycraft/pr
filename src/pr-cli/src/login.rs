@@ -117,10 +117,13 @@ pub fn command_login(
         msg_error("the selected distribution doesn't have /etc/passwd.");
         return Err("no /etc/passwd".to_string());
     }
-    
+
     let resolv_conf_path = format!("{}/etc/resolv.conf", rootfs);
     if !Path::new(&resolv_conf_path).exists() {
-        let _ = std::fs::write(&resolv_conf_path, "nameserver 8.8.8.8\nnameserver 1.1.1.1\n");
+        let _ = std::fs::write(
+            &resolv_conf_path,
+            "nameserver 8.8.8.8\nnameserver 1.1.1.1\n",
+        );
     }
 
     let entry = find_user_in_passwd(&passwd_path, user)?;

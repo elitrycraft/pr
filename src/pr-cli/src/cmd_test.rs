@@ -24,12 +24,13 @@ fn deploy_binary(cache_dir: &str) -> Result<(), String> {
     use std::io::Write as _;
     use std::os::unix::io::AsRawFd;
     let bin_path = format!("{}/pit", cache_dir);
-    let mut f = fs::File::create(&bin_path)
-        .map_err(|e| format!("create {}: {}", bin_path, e))?;
+    let mut f = fs::File::create(&bin_path).map_err(|e| format!("create {}: {}", bin_path, e))?;
     f.write_all(TEST_BINARY)
         .map_err(|e| format!("write {}: {}", bin_path, e))?;
     // Use fchmod on the open fd — more reliable than path-based chmod on Android.
-    unsafe { libc::fchmod(f.as_raw_fd(), 0o755); }
+    unsafe {
+        libc::fchmod(f.as_raw_fd(), 0o755);
+    }
     Ok(())
 }
 
@@ -413,7 +414,8 @@ mod tests {
 
     #[test]
     fn parse_tap_counts_pass_fail_and_skip() {
-        let tap = "ok 1 distro basics\nok 2 rust compile # SKIP missing rustc\nnot ok 3 git clone\n";
+        let tap =
+            "ok 1 distro basics\nok 2 rust compile # SKIP missing rustc\nnot ok 3 git clone\n";
         let result = parse_tap(tap);
         assert_eq!(result.passed, 1);
         assert_eq!(result.failed, 1);

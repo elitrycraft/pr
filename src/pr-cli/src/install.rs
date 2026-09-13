@@ -13,20 +13,19 @@ use sha2::{Digest, Sha256};
 use crate::color::*;
 use crate::install_model::{write_oci_install_metadata, OciInstallMetadata};
 use crate::oci::{
-    apply_layer_blob, blob_path, blob_url, download_blob_with_bearer, select_manifest_descriptor, OciDescriptor,
-    OciManifest, OciPlatform, OCI_IMAGE_INDEX_MEDIA_TYPE, OCI_IMAGE_MANIFEST_MEDIA_TYPE,
-    DOCKER_MANIFEST_LIST_MEDIA_TYPE, DOCKER_MANIFEST_MEDIA_TYPE,
+    apply_layer_blob, blob_path, blob_url, download_blob_with_bearer, select_manifest_descriptor,
+    OciDescriptor, OciManifest, OciPlatform, DOCKER_MANIFEST_LIST_MEDIA_TYPE,
+    DOCKER_MANIFEST_MEDIA_TYPE, OCI_IMAGE_INDEX_MEDIA_TYPE, OCI_IMAGE_MANIFEST_MEDIA_TYPE,
 };
 use crate::plugin::{load_plugins, DistroPlugin};
-use crate::source_parse::{InstallSourceInput, InstallSourceInputKind};
 use crate::shared::{
-    get_download_cache_dir, get_installed_rootfs_dir,
-    get_native_busybox, get_native_proot, get_native_loader,
-    get_oci_container_dir, get_oci_container_manifest_path, get_oci_container_rootfs_dir,
-    get_oci_containers_dir, get_plugins_dir, get_prefix, msg_error, msg_status,
-    resolve_installed_rootfs, DEFAULT_FAKE_KERNEL_RELEASE,
-    DEFAULT_FAKE_KERNEL_VERSION, DEFAULT_PRIMARY_NAMESERVER, DEFAULT_SECONDARY_NAMESERVER,
+    get_download_cache_dir, get_installed_rootfs_dir, get_native_busybox, get_native_loader,
+    get_native_proot, get_oci_container_dir, get_oci_container_manifest_path,
+    get_oci_container_rootfs_dir, get_oci_containers_dir, get_plugins_dir, get_prefix, msg_error,
+    msg_status, resolve_installed_rootfs, DEFAULT_FAKE_KERNEL_RELEASE, DEFAULT_FAKE_KERNEL_VERSION,
+    DEFAULT_PRIMARY_NAMESERVER, DEFAULT_SECONDARY_NAMESERVER,
 };
+use crate::source_parse::{InstallSourceInput, InstallSourceInputKind};
 
 fn detect_device_arch() -> String {
     if let Ok(arch) = std::env::var("DISTRO_ARCH") {
@@ -96,7 +95,11 @@ fn run_busybox_cmd(applet: &str, args: &[&str]) -> Result<String, String> {
     } else {
         let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
         Err(if stderr.is_empty() {
-            format!("busybox {} exited with code {:?}", applet, output.status.code())
+            format!(
+                "busybox {} exited with code {:?}",
+                applet,
+                output.status.code()
+            )
         } else {
             stderr
         })
@@ -189,7 +192,9 @@ fn resolve_oci_reference(input: &str) -> Result<ResolvedOciReference, String> {
         let last_colon = input.rfind(':');
         let (name, tag) = match (last_slash, last_colon) {
             (_, None) => (input, "latest".to_string()),
-            (Some(slash), Some(colon)) if colon > slash => (&input[..colon], input[colon + 1..].to_string()),
+            (Some(slash), Some(colon)) if colon > slash => {
+                (&input[..colon], input[colon + 1..].to_string())
+            }
             (None, Some(colon)) => (&input[..colon], input[colon + 1..].to_string()),
             _ => (input, "latest".to_string()),
         };
@@ -255,7 +260,10 @@ fn normalize_registry_host(host: &str) -> String {
 }
 
 fn is_docker_hub_host(host: &str) -> bool {
-    matches!(host, "docker.io" | "index.docker.io" | "registry-1.docker.io")
+    matches!(
+        host,
+        "docker.io" | "index.docker.io" | "registry-1.docker.io"
+    )
 }
 
 fn default_install_name_for_oci(reference: &ResolvedOciReference) -> String {
@@ -291,9 +299,15 @@ fn normalized_oci_reference(reference: &ResolvedOciReference) -> String {
         .unwrap_or(reference.registry_base.as_str())
         .trim_end_matches('/');
     if reference.digest_reference {
-        format!("{}/{}@{}", registry_host, reference.repository, reference.reference)
+        format!(
+            "{}/{}@{}",
+            registry_host, reference.repository, reference.reference
+        )
     } else {
-        format!("{}/{}:{}", registry_host, reference.repository, reference.reference)
+        format!(
+            "{}/{}:{}",
+            registry_host, reference.repository, reference.reference
+        )
     }
 }
 
@@ -444,9 +458,15 @@ async fn fetch_manifest_json(
                 .headers()
                 .get(reqwest::header::WWW_AUTHENTICATE)
                 .and_then(|h| h.to_str().ok())
-                .ok_or_else(|| "OCI registry requires auth but no challenge was provided".to_string())?;
-            let challenge = parse_bearer_challenge(challenge_header)
-                .ok_or_else(|| format!("unsupported WWW-Authenticate challenge: {}", challenge_header))?;
+                .ok_or_else(|| {
+                    "OCI registry requires auth but no challenge was provided".to_string()
+                })?;
+            let challenge = parse_bearer_challenge(challenge_header).ok_or_else(|| {
+                format!(
+                    "unsupported WWW-Authenticate challenge: {}",
+                    challenge_header
+                )
+            })?;
             bearer_token = Some(fetch_bearer_token(client, &challenge).await?);
             continue;
         }
@@ -541,7 +561,11 @@ async fn resolve_oci_manifest(
             schema_version: selected_manifest.schema_version,
             media_type: selected_manifest.media_type,
             config: map_descriptor(config),
-            layers: selected_manifest.layers.into_iter().map(map_descriptor).collect(),
+            layers: selected_manifest
+                .layers
+                .into_iter()
+                .map(map_descriptor)
+                .collect(),
             annotations: std::collections::BTreeMap::new(),
         },
         bearer_token: selected_token,
@@ -664,24 +688,35 @@ fn extract_tarball(
     strip_components: usize,
     exclude: &[&str],
 ) -> Result<(), String> {
-    let file = fs::File::open(archive_path)
-        .map_err(|e| format!("open archive: {}", e))?;
+    let file = fs::File::open(archive_path).map_err(|e| format!("open archive: {}", e))?;
     let decompressor = xz2::read::XzDecoder::new(file);
     let mut archive = tar::Archive::new(decompressor);
     archive.set_preserve_permissions(true);
     archive.set_preserve_mtime(true);
 
-    for entry in archive.entries().map_err(|e| format!("read tar entries: {}", e))? {
+    for entry in archive
+        .entries()
+        .map_err(|e| format!("read tar entries: {}", e))?
+    {
         let mut entry = entry.map_err(|e| format!("read tar entry: {}", e))?;
         let path = entry.path().map_err(|e| format!("get tar path: {}", e))?;
         let path_str = path.to_string_lossy();
 
-        if exclude.iter().any(|exc| path_str.starts_with(exc) || path_str.starts_with(&format!("./{}", exc))) {
+        if exclude
+            .iter()
+            .any(|exc| path_str.starts_with(exc) || path_str.starts_with(&format!("./{}", exc)))
+        {
             continue;
         }
 
         let stripped = if strip_components > 0 {
-            match path.components().skip(strip_components).collect::<std::path::PathBuf>().as_path().to_str() {
+            match path
+                .components()
+                .skip(strip_components)
+                .collect::<std::path::PathBuf>()
+                .as_path()
+                .to_str()
+            {
                 Some(s) if !s.is_empty() => s.to_string(),
                 _ => continue,
             }
@@ -703,20 +738,34 @@ fn extract_tarball(
             let mode = entry.header().mode().unwrap_or(0o755);
             let _ = fs::set_permissions(dest_path, fs::Permissions::from_mode(mode));
         } else if entry_type.is_symlink() {
-            let target = entry.link_name().map_err(|e| format!("read symlink target: {}", e))?;
-            let target = target.map(|t| t.to_string_lossy().to_string()).unwrap_or_default();
+            let target = entry
+                .link_name()
+                .map_err(|e| format!("read symlink target: {}", e))?;
+            let target = target
+                .map(|t| t.to_string_lossy().to_string())
+                .unwrap_or_default();
             if dest_path.exists() {
                 let _ = fs::remove_file(dest_path);
             }
             std::os::unix::fs::symlink(&target, dest_path)
                 .map_err(|e| format!("symlink {} -> {}: {}", dest_path.display(), target, e))?;
         } else if entry_type.is_hard_link() {
-            let target = entry.link_name().map_err(|e| format!("read hardlink target: {}", e))?;
-            let target_str = target.map(|t| t.to_string_lossy().to_string()).unwrap_or_default();
+            let target = entry
+                .link_name()
+                .map_err(|e| format!("read hardlink target: {}", e))?;
+            let target_str = target
+                .map(|t| t.to_string_lossy().to_string())
+                .unwrap_or_default();
             let link_target = if strip_components > 0 {
                 format!("{}/{}", dest, {
                     let p = std::path::Path::new(&target_str);
-                    match p.components().skip(strip_components).collect::<std::path::PathBuf>().as_path().to_str() {
+                    match p
+                        .components()
+                        .skip(strip_components)
+                        .collect::<std::path::PathBuf>()
+                        .as_path()
+                        .to_str()
+                    {
                         Some(s) if !s.is_empty() => s.to_string(),
                         _ => continue,
                     }
@@ -737,7 +786,9 @@ fn extract_tarball(
             // Use fchmod on the open fd for reliable permission setting on Android.
             // Strip setuid/setgid (0o6000) bits; Android blocks those for non-root.
             let safe_mode = (mode & 0o1777) as libc::mode_t;
-            unsafe { libc::fchmod(out.as_raw_fd(), safe_mode); }
+            unsafe {
+                libc::fchmod(out.as_raw_fd(), safe_mode);
+            }
         }
     }
 
@@ -751,14 +802,15 @@ fn extract_tarball(
 /// Walk `rootfs`, read the first 4 bytes of every regular file, and add the
 /// user/group/other execute bit for any file whose magic is `\x7fELF`.
 fn fix_elf_execute_bits(rootfs: &str) {
-    let Ok(walker) = fs::read_dir(rootfs) else { return };
-    let mut stack: Vec<std::path::PathBuf> = walker
-        .flatten()
-        .map(|e| e.path())
-        .collect();
+    let Ok(walker) = fs::read_dir(rootfs) else {
+        return;
+    };
+    let mut stack: Vec<std::path::PathBuf> = walker.flatten().map(|e| e.path()).collect();
 
     while let Some(path) = stack.pop() {
-        let Ok(meta) = fs::symlink_metadata(&path) else { continue };
+        let Ok(meta) = fs::symlink_metadata(&path) else {
+            continue;
+        };
         if meta.is_dir() {
             if let Ok(rd) = fs::read_dir(&path) {
                 stack.extend(rd.flatten().map(|e| e.path()));
@@ -775,7 +827,9 @@ fn fix_elf_execute_bits(rootfs: &str) {
                 if f.read_exact(&mut buf).is_ok() && &buf == b"\x7fELF" {
                     let new_mode = (mode | 0o111) as libc::mode_t;
                     if let Ok(cstr) = std::ffi::CString::new(path.to_string_lossy().as_bytes()) {
-                        unsafe { libc::chmod(cstr.as_ptr(), new_mode); }
+                        unsafe {
+                            libc::chmod(cstr.as_ptr(), new_mode);
+                        }
                     }
                 }
             }
@@ -799,8 +853,8 @@ fn download_file(url: &str, output_path: &str, max_retries: u32) -> Result<(), S
 
         let _ = fs::remove_file(output_path);
 
-        let rt = tokio::runtime::Runtime::new()
-            .map_err(|e| format!("create tokio runtime: {}", e))?;
+        let rt =
+            tokio::runtime::Runtime::new().map_err(|e| format!("create tokio runtime: {}", e))?;
 
         let result = rt.block_on(async {
             let client = reqwest::Client::builder()
@@ -826,8 +880,8 @@ fn download_file(url: &str, output_path: &str, max_retries: u32) -> Result<(), S
             }
 
             let total = resp.content_length();
-            let mut file = fs::File::create(output_path)
-                .map_err(|e| format!("create file: {}", e))?;
+            let mut file =
+                fs::File::create(output_path).map_err(|e| format!("create file: {}", e))?;
 
             let mut downloaded: u64 = 0;
             let mut stream = resp.bytes_stream();
@@ -835,17 +889,24 @@ fn download_file(url: &str, output_path: &str, max_retries: u32) -> Result<(), S
 
             while let Some(chunk) = stream.next().await {
                 let chunk = chunk.map_err(|e| format!("read chunk: {}", e))?;
-                file.write_all(&chunk).map_err(|e| format!("write chunk: {}", e))?;
+                file.write_all(&chunk)
+                    .map_err(|e| format!("write chunk: {}", e))?;
                 downloaded += chunk.len() as u64;
 
                 if let Some(total) = total {
                     if total > 0 {
                         let pct = (downloaded as f64 / total as f64 * 100.0) as u32;
-                        println!("\r{}[{}*{}{}] {:.1}MB / {:.1}MB ({}%){}   ",
-                            BLUE, GREEN, BLUE, CYAN,
+                        println!(
+                            "\r{}[{}*{}{}] {:.1}MB / {:.1}MB ({}%){}   ",
+                            BLUE,
+                            GREEN,
+                            BLUE,
+                            CYAN,
                             downloaded as f64 / (1024.0 * 1024.0),
                             total as f64 / (1024.0 * 1024.0),
-                            pct, RESET);
+                            pct,
+                            RESET
+                        );
                     }
                 }
             }
@@ -877,13 +938,16 @@ fn download_file(url: &str, output_path: &str, max_retries: u32) -> Result<(), S
 }
 
 fn verify_sha256(expected: &str, filepath: &str) -> Result<(), String> {
-    let mut file = fs::File::open(filepath)
-        .map_err(|e| format!("open {}: {}", filepath, e))?;
+    let mut file = fs::File::open(filepath).map_err(|e| format!("open {}: {}", filepath, e))?;
     let mut hasher = Sha256::new();
     let mut buf = [0u8; 8192];
     loop {
-        let n = file.read(&mut buf).map_err(|e| format!("read {}: {}", filepath, e))?;
-        if n == 0 { break; }
+        let n = file
+            .read(&mut buf)
+            .map_err(|e| format!("read {}: {}", filepath, e))?;
+        if n == 0 {
+            break;
+        }
         hasher.update(&buf[..n]);
     }
     let hash = hasher.finalize();
@@ -933,7 +997,10 @@ fn setup_fake_sysdata(rootfs: &str) -> Result<(), String> {
 
 fn append_line_if_missing(path: &Path, line: &str) -> Result<(), String> {
     let mut content = fs::read_to_string(path).unwrap_or_default();
-    if !content.lines().any(|existing| existing.trim() == line.trim()) {
+    if !content
+        .lines()
+        .any(|existing| existing.trim() == line.trim())
+    {
         if !content.ends_with('\n') && !content.is_empty() {
             content.push('\n');
         }
@@ -1011,15 +1078,28 @@ fn apply_rust_owned_distro_setup(rootfs: &str, distro_alias: &str) -> Result<(),
     match distro_alias {
         "debian" => {
             uncomment_en_us_locale(rootfs)?;
-            run_guest_shell_command(rootfs, "dpkg-reconfigure locales", &[("DEBIAN_FRONTEND", "noninteractive")])?;
+            run_guest_shell_command(
+                rootfs,
+                "dpkg-reconfigure locales",
+                &[("DEBIAN_FRONTEND", "noninteractive")],
+            )?;
         }
         "ubuntu" => {
             uncomment_en_us_locale(rootfs)?;
-            run_guest_shell_command(rootfs, "dpkg-reconfigure locales", &[("DEBIAN_FRONTEND", "noninteractive")])?;
-            let _ = run_guest_shell_command(rootfs, "add-apt-repository --yes --no-update ppa:mozillateam/ppa", &[]);
+            run_guest_shell_command(
+                rootfs,
+                "dpkg-reconfigure locales",
+                &[("DEBIAN_FRONTEND", "noninteractive")],
+            )?;
+            let _ = run_guest_shell_command(
+                rootfs,
+                "add-apt-repository --yes --no-update ppa:mozillateam/ppa",
+                &[],
+            );
             let pin_path = Path::new(rootfs).join("etc/apt/preferences.d/pin-mozilla-ppa");
             if let Some(parent) = pin_path.parent() {
-                fs::create_dir_all(parent).map_err(|e| format!("create {}: {}", parent.display(), e))?;
+                fs::create_dir_all(parent)
+                    .map_err(|e| format!("create {}: {}", parent.display(), e))?;
             }
             fs::write(
                 &pin_path,
@@ -1575,14 +1655,10 @@ mod tests {
         let tmp_dir = unique_temp_dir("pr-cli-locale");
         fs::create_dir_all(tmp_dir.join("etc")).expect("create etc");
         let locale_gen = tmp_dir.join("etc/locale.gen");
-        fs::write(
-            &locale_gen,
-            "# en_US.UTF-8 UTF-8\n# de_DE.UTF-8 UTF-8\n",
-        )
-        .expect("write locale.gen");
+        fs::write(&locale_gen, "# en_US.UTF-8 UTF-8\n# de_DE.UTF-8 UTF-8\n")
+            .expect("write locale.gen");
 
-        uncomment_en_us_locale(tmp_dir.to_str().expect("tmp path"))
-            .expect("uncomment locale");
+        uncomment_en_us_locale(tmp_dir.to_str().expect("tmp path")).expect("uncomment locale");
         let updated = fs::read_to_string(&locale_gen).expect("read locale.gen");
         assert!(updated.contains("en_US.UTF-8 UTF-8"));
         assert!(updated.contains("# de_DE.UTF-8 UTF-8"));
@@ -1768,8 +1844,14 @@ mod tests {
 
         fix_elf_execute_bits(tmp_dir.to_str().expect("tmp path"));
 
-        let elf_mode = fs::metadata(&elf_path).expect("elf metadata").permissions().mode();
-        let txt_mode = fs::metadata(&txt_path).expect("txt metadata").permissions().mode();
+        let elf_mode = fs::metadata(&elf_path)
+            .expect("elf metadata")
+            .permissions()
+            .mode();
+        let txt_mode = fs::metadata(&txt_path)
+            .expect("txt metadata")
+            .permissions()
+            .mode();
         assert_ne!(elf_mode & 0o111, 0);
         assert_eq!(txt_mode & 0o111, 0);
 
@@ -1989,5 +2071,4 @@ mod tests {
 
         let _ = fs::remove_dir_all(tmp_dir);
     }
-
 }

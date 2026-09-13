@@ -212,7 +212,10 @@ pub fn load_plugins(dir: &Path) -> Vec<DistroPlugin> {
     if let Ok(entries) = fs::read_dir(dir) {
         for entry in entries.flatten() {
             let path = entry.path();
-            let name = path.file_name().and_then(|f| f.to_str()).unwrap_or_default();
+            let name = path
+                .file_name()
+                .and_then(|f| f.to_str())
+                .unwrap_or_default();
             if !(name.ends_with(".sh") || name.ends_with(".override.sh")) {
                 continue;
             }

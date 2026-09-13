@@ -41,7 +41,9 @@ impl InstallSource {
     pub fn source_ref(&self) -> &str {
         match self {
             InstallSource::LegacyPlugin { plugin_alias, .. } => plugin_alias.as_str(),
-            InstallSource::OciImage { image_reference, .. } => image_reference.as_str(),
+            InstallSource::OciImage {
+                image_reference, ..
+            } => image_reference.as_str(),
         }
     }
 
@@ -214,7 +216,9 @@ mod tests {
         assert_eq!(descriptor.metadata_path(), None);
         assert_eq!(
             descriptor.source.source_path(),
-            Some(Path::new("/data/data/id.or.oo.pr/files/usr/share/pr/plugins/alpine.sh"))
+            Some(Path::new(
+                "/data/data/id.or.oo.pr/files/usr/share/pr/plugins/alpine.sh"
+            ))
         );
 
         let converted = InstallDescriptor::from_legacy_plugin(
@@ -255,7 +259,11 @@ mod tests {
             .duration_since(UNIX_EPOCH)
             .expect("time")
             .as_nanos();
-        let base = std::env::temp_dir().join(format!("pr-cli-oci-metadata-{}-{}", std::process::id(), nanos));
+        let base = std::env::temp_dir().join(format!(
+            "pr-cli-oci-metadata-{}-{}",
+            std::process::id(),
+            nanos
+        ));
         let metadata_path = base.join("manifest.json");
         let metadata = OciInstallMetadata::new(
             "debian",

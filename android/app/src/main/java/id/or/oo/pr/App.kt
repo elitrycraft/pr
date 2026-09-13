@@ -5,11 +5,12 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.system.Os
 import android.util.Log
+import id.or.oo.pr.engine.ProotHost
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 
-class App : Application() {
+class App : Application(), ProotHost {
 
     companion object {
         private const val TAG = "PR"
@@ -20,11 +21,17 @@ class App : Application() {
         private const val BOOTSTRAP_VERSION = 8
     }
 
-    val prefixDir: File
+    override val prefixDir: File
         get() = File(filesDir, "usr")
 
-    val homeDir: File
+    override val homeDir: File
         get() = File(filesDir, "home")
+
+    override val packageName: String
+        get() = super.getPackageName()
+
+    override val cacheDir: File
+        get() = super.getCacheDir()
 
     val nativeLibDir: File
         get() = File(applicationInfo.nativeLibraryDir)

@@ -351,6 +351,47 @@ mod tests {
     }
 
     #[test]
+    fn test_cli_android_setup_args() {
+        // This test ensures the complex arguments passed by Android TerminalActivity.kt
+        // are correctly parsed by clap, preventing regressions like the "expected argument" error.
+        
+        // 1. Test Android INSTALL args
+        let install_args = vec![
+            "pr-cli",
+            "install",
+            "docker.io/library/alpine:latest",
+            "--override-alias",
+            "alpine"
+        ];
+        let cli_install = Cli::try_parse_from(install_args).expect("Failed to parse install args");
+        match cli_install.command {
+            Commands::Install { distro, override_alias, .. } => {
+                assert_eq!(distro, "docker.io/library/alpine:latest");
+                assert_eq!(override_alias.as_deref(), Some("alpine"));
+            }
+            _ => panic!("Expected Install command"),
+        }
+
+        // 2. Test Android LOGIN args with trailing command containing spaces
+        let login_args = vec![
+            "pr-cli",
+            "login",
+            "alpine",
+            "--",
+            "apk update && apk add rust cargo gcc && ln -s /usr/bin/gcc /usr/bin/cc 2>/dev/null; echo > /etc/.rust_setup; echo '\r\nSetup complete! You can close this terminal.'"
+        ];
+        let cli_login = Cli::try_parse_from(login_args).expect("Failed to parse login args");
+        match cli_login.command {
+            Commands::Login { distro, command, .. } => {
+                assert_eq!(distro, "alpine");
+                assert_eq!(command.len(), 1);
+                assert!(command[0].starts_with("apk update"));
+            }
+            _ => panic!("Expected Login command"),
+        }
+    }
+
+    #[test]
     fn collects_legacy_and_oci_entries() {
         let base = unique_temp_dir("pr-cli-list-entries");
         let legacy = base.join("installed-rootfs");

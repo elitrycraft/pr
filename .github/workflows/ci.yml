@@ -44,6 +44,11 @@ jobs:
         cd src/proot-integration-test
         cargo fmt -- --check
 
+    - name: Run Cargo Test (pr-cli)
+      run: |
+        cd src/pr-cli
+        cargo test
+
     - name: Build Proot C Binaries
       run: |
         ./scripts/build.sh --arch=arm64 --ndk-path=$ANDROID_NDK_LATEST_HOME

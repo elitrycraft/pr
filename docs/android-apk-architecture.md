@@ -134,15 +134,16 @@ Full terminal emulator using ConnectBot's termlib (115 lines):
   - 24 rows x 80 cols initial size
   - Dark theme: background `#1a1a2e`, foreground `Color.White`, font `12sp`
   - `onKeyboardInput` callback: writes bytes to PTY master fd
+  - `onResize` callback: forwards `TerminalDimensions` changes to `session.resize(rows, cols)` so apps inside proot (nano, htop, shell prompts) see the correct terminal size when the soft keyboard opens or the device rotates
 - Starts PTY session via `ProotLauncher.startSession(distroName)`
 - Spawns reader thread (`"pty-reader"`) that:
   - Reads 8KB chunks from PTY master fd in a loop
   - Feeds data to `emulator.writeInput(buf, 0, n)`
   - Exits on EOF or error
-- Renders using termlib's `Terminal()` composable with `keyboardEnabled=true`
+- Renders using termlib's `Terminal()` composable with `keyboardEnabled=true` and `Modifier.systemBarsPadding()` to prevent the first rows of output being hidden behind the camera notch and Android status bar
 - Lifecycle: `onDestroy()` closes session and interrupts reader thread
 - Back press: `OnBackPressedCallback` triggers cleanup and `finish()`
-- Manifest: `windowSoftInputMode=adjustResize` for keyboard handling
+- Manifest: `windowSoftInputMode=adjustResize` + `configChanges="orientation|screenSize|keyboard|keyboardHidden"` — prevents activity destruction and PTY detachment when the soft keyboard appears
 
 ### T4.5 — Implement ProotLauncher
 
@@ -169,6 +170,7 @@ PTY-based process execution bridge with two layers:
 
 **ProotLauncher.kt** (132 lines) — Kotlin session manager:
 - `startSession(distro, user, isolated, rows, cols)`: forks bash with `proot-distro.sh login <distro> --user <user> [--isolated]` args and full environment
+- `startCustomSession(args: List<String>, rows, cols)`: forks directly with a pre-parsed argument list — avoids brittle `split(" ")` used by `runCommand()`. Use this when arguments contain spaces or quoted strings (e.g. install pipelines, custom login commands)
 - `runCommand(command)`: forks `bash -c "source proot-distro.sh; proot-distro <command>"` for install/remove
 - Environment variables set on every session:
   - `APP_PREFIX`, `APP_HOME`, `APP_PACKAGE` — app identity
@@ -268,4 +270,15 @@ The 183-line `ptyjni.c` provides proper PTY via `/dev/ptmx` + `fork()` + `exec()
 - **T5.2-T5.6**: Integration testing on device (Alpine, Debian, Ubuntu, backup/restore, isolated mode)
 - **Build test**: APK has not been built with termlib integration yet — Gradle sync + `assembleDebug` needed to verify module resolution
 - **Compose theme**: Currently uses default Material3 — should adopt app branding (#1a1a2e navy, #e94560 red)
-- **Terminal resize**: TerminalActivity does not yet observe Compose layout size changes to call `session.resize()` + `emulator.resize()` — terminal starts at 24x80 regardless of screen size
+- ~~**Terminal resize**: TerminalActivity does not yet observe Compose layout size changes to call `session.resize()` + `emulator.resize()` — terminal starts at 24x80 regardless of screen size~~ **Resolved**: `onResize` callback added to `TerminalEmulatorFactory.create()`; forwarded to `session.resize()`.
+
+### OCI Container Paths vs Legacy Plugin Paths
+
+Two installation methods produce rootfs in different locations:
+
+| Method | Command | Rootfs location |
+|--------|---------|-----------------|
+| OCI reference | `pr-cli install docker.io/library/alpine:latest` | `var/lib/pr/containers/<alias>/rootfs/` |
+| Legacy plugin | `proot-distro.sh install alpine` | `var/lib/pr/installed-rootfs/<distro>/` |
+
+Code checking for distro existence (e.g. MainActivity's `isInstalled` check) must use the path corresponding to the installation method. The OCI path is used by `pr-cli`; the legacy path is used by the shell-script era (Phase 2). If both methods are in use, check both paths.

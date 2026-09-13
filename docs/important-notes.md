@@ -252,6 +252,49 @@ this environment (link() is always blocked), so the stubs are the correct long-t
 
 ---
 
+---
+
+## pr-cli Caveats
+
+### `touch` silently fails inside proot
+
+BusyBox `touch` uses `utimensat` which proot intercepts incorrectly on Android.
+`touch /path/to/file` returns exit code 0 but the file is never created on disk.
+The file may appear to exist within the same proot session (proot's translation
+layer caches it) but will not persist to the host filesystem.
+
+**Workaround:** Use `echo > /path/to/file` instead. Shell redirection uses
+`open(O_CREAT|O_WRONLY|O_TRUNC)` which proot handles correctly.
+
+This affects any script that uses `touch` to create marker or sentinel files
+inside proot. The `pr-cli` test scripts use `echo >` for this reason.
+
+### Double shell wrapping via `pr-cli login`
+
+`pr-cli login <distro> -- <args>` internally prepends `/bin/sh -l -c "<args.join(' ')\>"`
+before calling proot. If callers explicitly pass `/bin/sh -c` as trailing args, the
+command gets double-wrapped:
+
+```
+/bin/sh -l -c "/bin/sh -c command"
+```
+
+The inner quotes are stripped during `.join(' ')`, breaking the inner shell's
+argument parsing.
+
+**Rule:** Pass the raw command string directly as the trailing argument — never
+wrap it in `/bin/sh -c` yourself:
+
+```bash
+# WRONG — double-wrapped, inner quotes stripped:
+pr-cli login alpine -- /bin/sh -c "apk update && apk add rust"
+
+# CORRECT — pr-cli adds the shell wrapper itself:
+pr-cli login alpine -- "apk update && apk add rust"
+```
+
+---
+
 ## Project Name: pr
 
 **pr** stands for **PRoot** — which is short for **ptrace-based root**.

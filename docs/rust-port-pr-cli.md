@@ -396,3 +396,34 @@ Proot itself starts fine, but `execve` inside proot fails with ENOSYS. This is t
 The Rust approach is **viable**. All core capabilities (exec, file I/O, subprocess spawning, env vars) work from the app process. The remaining issues (network, proot exec) are orthogonal to the Rust vs shell choice — they would exist in either approach.
 
 ---
+
+## Known Issues / Errata
+
+### clap `login` command rejects hyphen-prefixed trailing args
+
+**Discovered:** while building `rs.oo.or.id` on top of `pr-cli`.
+
+**File:** `src/pr-cli/src/main.rs` — `Commands::Login` variant.
+
+**Problem:** The `login` subcommand used `#[arg(last = true)]` for the trailing
+`args` field. clap's `last = true` mode marks the argument as "must come after
+`--`" but still rejects values that look like flags. Passing
+`pr-cli login alpine -- /bin/sh -c "apk update"` failed with:
+
+```
+error: unexpected argument '-c' found
+```
+
+**Fix:**
+```rust
+#[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+```
+
+`trailing_var_arg` enables raw passthrough of everything after the subcommand
+name, and `allow_hyphen_values` suppresses clap's flag-detection heuristic for
+those values. Together they allow any argument string — including those starting
+with `-` — to be collected verbatim.
+
+**Note:** Per the double-shell-wrapping caveat (see `docs/important-notes.md`),
+even with this fix callers should not pass `/bin/sh -c` explicitly as trailing
+args to `pr-cli login` — the inner shell wrapping already happens inside pr-cli.

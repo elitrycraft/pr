@@ -168,7 +168,7 @@ Command::new("/bin/sh").args(["-c", "apk update 2>&1"]).output()
 
 ### Proot caveats
 
-**`touch` silently fails inside proot:** BusyBox `touch` uses `utimensat` which proot intercepts incorrectly. `touch /path/to/file` returns exit code 0 but the file is never created on disk. Use `echo > /path/to/file` instead — shell redirection uses `open(O_CREAT|O_WRONLY|O_TRUNC)` which proot handles correctly. Audit any scripts using `touch` for sentinel/marker files.
+**`touch` silently fails inside proot:** BusyBox `touch` uses `utimensat` which proot intercepts incorrectly. `touch /path/to/file` returns exit code 0 but the file is never created on disk. Use `echo > /path/to/file` instead — shell redirection uses `open(O_CREAT|O_WRONLY|O_TRUNC)` which proot handles correctly. See `docs/important-notes.md` § pr-cli Caveats.
 
 **Double shell wrapping via `pr-cli login`:** `pr-cli login <distro> -- <args>` internally prepends `/bin/sh -l -c "<args.join(' ')>"`. Never pass `/bin/sh -c` as trailing args — it causes double wrapping and broken quoting:
 ```bash
@@ -178,8 +178,9 @@ pr-cli login alpine -- /bin/sh -c "apk update && apk add rust"
 # CORRECT — pass the raw command string directly:
 pr-cli login alpine -- "apk update && apk add rust"
 ```
+See `docs/important-notes.md` § pr-cli Caveats.
 
-**OCI container path vs legacy plugin path:** OCI installs (via `docker.io/library/alpine:latest`) land in `var/lib/pr/containers/<alias>/rootfs/`. Legacy plugin installs (via `easycli.sh`) land in `var/lib/pr/installed-rootfs/<distro>/`. Code checking for distro existence must use the correct path for the installation method.
+**OCI container path vs legacy plugin path:** OCI installs land in `var/lib/pr/containers/<alias>/rootfs/`. Legacy plugin installs land in `var/lib/pr/installed-rootfs/<distro>/`. See `docs/android-apk-architecture.md` § OCI Container Paths.
 
 ### Commit style
 
@@ -220,9 +221,8 @@ Use the Superpowers workflow and skills (`subagent-driven-development`, `brainst
 
 ## Key References
 
-- `docs/important-notes.md` — Critical constraints, seccomp handlers, read first
-- `docs/proot-improvement.md` — Our proot fork vs vendor/proot and vendor/termux-proot
+- `docs/important-notes.md` — Critical constraints, seccomp handlers, pr-cli caveats, read first
+- `docs/proot-improvement.md` — Our proot fork vs vendor/proot and vendor/termux-proot; §29 covers bind mount bug
 - `docs/rust-toolchain-support.md` — vfork/CLONE_VM fix, link2symlink readlink fix
 - `docs/integration-tests.md` — Integration test suite (37/37 pass)
 - `docs/targetsdk35-compatibility.md` — targetSdk 35 compatibility (PROOT_LOADER mechanism)
-- `docs/pr-improvements.md` — Improvements backported from rs.oo.or.id fork

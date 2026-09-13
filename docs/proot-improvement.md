@@ -692,3 +692,51 @@ non-USERLAND code path forces any negative result to 0 when `euid == 0`.
 | `extension/link2symlink/link2symlink.c` | Added chown+utimes variants to `translated_path()` exclusion list |
 | `extension/fake_id0/chown.c` | non-USERLAND: replace lchown with `PR_getuid` via `set_sysnum` |
 | `extension/fake_id0/fake_id0.c` | Removed `#ifdef USERLAND` guard from PR_getuid/PR_void result-zeroing; added non-USERLAND EXIT handler for utimes variants |
+
+---
+
+## 29. Solved: Hardcoded Package Name in Bind Mounts (`src/pr-cli/src/shared.rs`)
+
+Discovered while building `rs.oo.or.id` (a fork of the `pr` engine with a different package name).
+
+### Problem
+
+`build_proot_args()` in `shared.rs` hardcoded `/data/data/id.or.oo.pr/cache` and
+`/data/data/id.or.oo.pr` as the bind mount paths passed to proot's `--bind`. Any app
+with a different Android package name (e.g. `id.or.oo.rs`) got `Permission denied`
+warnings and the bind mounts silently failed.
+
+### Impact on link2symlink
+
+Alpine's `apk add` creates hard links via proot's `link2symlink` mechanism. The `.l2s/`
+directory that stores the symlink targets is placed inside the app data directory. Without
+the correct bind mount (pointing at the actual app's data dir), proot cannot resolve `.l2s`
+symlinks — so binaries installed by `apk add gcc` appear installed (`ls -l /usr/bin/gcc`
+shows them) but become invisible to the guest shell:
+
+```
+/bin/sh: gcc: not found
+```
+
+This was the **root cause of the "linker `cc` not found"** error when running `rustc` on
+Alpine (previously misattributed to a missing `cc` symlink and documented as a known
+Alpine-specific test failure).
+
+### Fix
+
+Derive `app_dir` dynamically from `APP_PREFIX` instead of hardcoding the package name:
+
+```rust
+let app_dir = Path::new(&prefix).parent().unwrap().parent().unwrap();
+args.push(format!("--bind={}/cache", app_dir.display()));
+args.push(format!("--bind={}", app_dir.display()));
+```
+
+`APP_PREFIX` is always `<app_data_dir>/files/usr`, so `.parent().parent()` gives
+`<app_data_dir>` regardless of package name.
+
+### Files changed
+
+| File | Change |
+|------|--------|
+| `src/pr-cli/src/shared.rs` | `build_proot_args()`: derive `app_dir` from `APP_PREFIX` via `.parent().parent()` |
